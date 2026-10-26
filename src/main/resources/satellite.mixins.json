@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "fr.crazycat256.satellite.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "CameraMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "mixins": [
+    "EntityMixin",
+    "ItemStackMixin"
+  ]
+}

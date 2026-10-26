@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "id": "meteor-addon-ppp",
+  "version": "26.1-1.0.0",
+  "name": "Meteor Addon+++",
+  "description": "Meteor Addon+++ 整合包：把 Meteor Rejects、Meteor Litematica Printer、Meteor+、Meteor Satellite Addon、Meteorist、Jefff's Mods 与 Meteor-I18n-XC 简体中文汉化合为一个 Meteor 客户端附加模组。保留全部模块、命令、HUD 与汉化词库；除 Meteor+ 外的模块统一放入 Meteor+++ 分类，并内置简体中文翻译。",
+  "authors": [
+    "§cDSv4.1F",
+    "§7§oXC_Xin_Cheng"
+  ],
+  "contributors": [
+    "Cloudburst",
+    "StormyBytes",
+    "kkllffaa",
+    "Neki_play",
+    "crazycat256",
+    "Zgoly",
+    "jefff"
+  ],
+  "license": "GPL-3.0 (bundled addons keep their own licenses, see ATTRIBUTION.md)",
+  "icon": "assets/meteoraddonppp/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": [
+      "nekiplay.Main"
+    ],
+    "meteor": [
+      "anticope.rejects.MeteorRejectsAddon",
+      "com.kkllffaa.meteor_litematica_printer.Addon",
+      "nekiplay.meteorplus.MeteorPlusAddon",
+      "fr.crazycat256.satellite.Addon",
+      "zgoly.meteorist.Meteorist",
+      "cn.blockforge.meteorzhcn.MeteorZhCn",
+      "com.stash.hunt.Addon",
+      "meteoraddonppp.MeteorAddonPPP"
+    ],
+    "seedcrackerx": [
+      "anticope.rejects.utils.SeedCrackerEP"
+    ],
+    "modmenu": [
+      "meteordevelopment.meteorclient.modintegration.ModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "meteor-rejects.mixins.json",
+    "meteor-rejects-meteor.mixins.json",
+    "meteorplus.mixins.json",
+    "meteorplus-whereisit.mixins.json",
+    "meteorplus-xaeroworldmap.mixins.json",
+    "satellite.mixins.json",
+    "meteorist.mixins.json",
+    "jefff-mod.mixins.json",
+    "meteor-zh-cn.mixins.json",
+    "meteor-zh-cn-font.mixins.json",
+    "meteoraddonppp.mixins.json"
+  ],
+  "accessWidener": "meteoraddonppp.accesswidener",
+  "jars": [
+    {
+      "file": "META-INF/jars/seedcrackerx-api-2.10.1.jar"
+    }
+  ],
+  "custom": {
+    "meteor-client:color": "168,92,255"
+  },
+  "depends": {
+    "fabricloader": ">=0.19.2",
+    "minecraft": ">=26.1 <26.2",
+    "java": ">=25",
+    "meteor-client": "*"
+  },
+  "suggests": {
+    "baritone": "*",
+    "baritone-meteor": "*",
+    "xaeroworldmap": "*",
+    "xaerominimap": "*",
+    "xaeroplus": "*",
+    "whereisit": "*",
+    "minescript": "*",
+    "exploitpreventer": "*",
+    "catppuccin-addon": "*",
+    "litematica": "*",
+    "modernui": "*"
+  }
+}

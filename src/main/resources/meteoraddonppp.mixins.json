@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "meteoraddonppp.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "TitleScreenCreditsMixin"
+  ],
+  "mixins": [
+    "ModuleCategoryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

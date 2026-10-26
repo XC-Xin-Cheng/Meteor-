@@ -1,0 +1,42 @@
+package anticope.rejects.mixin.meteor;
+
+import anticope.rejects.utils.accounts.AddCustomYggdrasilAccountScreen;
+import meteordevelopment.meteorclient.MeteorClient;
+import meteordevelopment.meteorclient.gui.GuiTheme;
+import meteordevelopment.meteorclient.gui.WindowScreen;
+import meteordevelopment.meteorclient.gui.screens.accounts.AccountsScreen;
+import meteordevelopment.meteorclient.gui.widgets.WWidget;
+import meteordevelopment.meteorclient.gui.widgets.containers.WContainer;
+import meteordevelopment.meteorclient.gui.widgets.containers.WHorizontalList;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
+
+@Mixin(
+   value = {AccountsScreen.class},
+   remap = false
+)
+public abstract class AccountsScreenMixin extends WindowScreen {
+   public AccountsScreenMixin(GuiTheme theme, WWidget icon, String title) {
+      super(theme, icon, title);
+   }
+
+   @Shadow
+   protected abstract void addButton(WContainer var1, String var2, Runnable var3);
+
+   @Inject(
+      method = {"initWidgets"},
+      at = {@At(
+         value = "INVOKE",
+         target = "Lmeteordevelopment/meteorclient/gui/screens/accounts/AccountsScreen;addButton(Lmeteordevelopment/meteorclient/gui/widgets/containers/WContainer;Ljava/lang/String;Ljava/lang/Runnable;)V",
+         ordinal = 0
+      )},
+      locals = LocalCapture.CAPTURE_FAILHARD
+   )
+   private void afterAddCrackedButton(CallbackInfo info, WHorizontalList l) {
+      this.addButton(l, "Yggdrasil", () -> MeteorClient.mc.setScreen(new AddCustomYggdrasilAccountScreen(this.theme, (AccountsScreen)this)));
+   }
+}

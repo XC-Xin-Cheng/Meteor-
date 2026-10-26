@@ -1,0 +1,530 @@
+package com.seedfinding.mcfeature.structure.generator.structure;
+
+import com.seedfinding.mccore.rand.ChunkRand;
+import com.seedfinding.mccore.util.block.BlockBox;
+import com.seedfinding.mccore.util.block.BlockMirror;
+import com.seedfinding.mccore.util.block.BlockRotation;
+import com.seedfinding.mccore.util.data.Pair;
+import com.seedfinding.mccore.util.pos.BPos;
+import com.seedfinding.mccore.version.MCVersion;
+import com.seedfinding.mcfeature.loot.ChestContent;
+import com.seedfinding.mcfeature.loot.LootTable;
+import com.seedfinding.mcfeature.loot.MCLootTables;
+import com.seedfinding.mcfeature.loot.item.Item;
+import com.seedfinding.mcfeature.loot.item.Items;
+import com.seedfinding.mcfeature.structure.EndCity;
+import com.seedfinding.mcterrain.TerrainGenerator;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.Map.Entry;
+import java.util.function.Supplier;
+
+public class EndCityGenerator extends com.seedfinding.mcfeature.structure.generator.Generator {
+   private final List<EndCityGenerator.Template> globalPieces = new ArrayList<>();
+   private static final List<Pair<BlockRotation, BPos>> FAT_TOWER_BRIDGES = Arrays.asList(
+      new Pair<>(BlockRotation.NONE, new BPos(4, -1, 0)),
+      new Pair<>(BlockRotation.CLOCKWISE_90, new BPos(12, -1, 4)),
+      new Pair<>(BlockRotation.COUNTERCLOCKWISE_90, new BPos(0, -1, 8)),
+      new Pair<>(BlockRotation.CLOCKWISE_180, new BPos(8, -1, 12))
+   );
+   private static final EndCityGenerator.Generator FAT_TOWER_GENERATOR = new EndCityGenerator.Generator() {
+      @Override
+      public void init() {
+      }
+
+      @Override
+      public boolean generate(int depth, EndCityGenerator.Template current, BPos pos, List<EndCityGenerator.Template> pieces, ChunkRand rand) {
+         BlockRotation rotation = current.getRotation();
+         EndCityGenerator.Template base = EndCityGenerator.generateAndAdd(pieces, current, new BPos(-3, 4, -3), "fat_tower_base", rotation, true);
+         base = EndCityGenerator.generateAndAdd(pieces, base, new BPos(0, 4, 0), "fat_tower_middle", rotation, true);
+
+         for (int floor = 0; floor < 2 && rand.nextInt(3) != 0; floor++) {
+            base = EndCityGenerator.generateAndAdd(pieces, base, new BPos(0, 8, 0), "fat_tower_middle", rotation, true);
+
+            for (Pair<BlockRotation, BPos> towerBridge : EndCityGenerator.FAT_TOWER_BRIDGES) {
+               if (rand.nextBoolean()) {
+                  EndCityGenerator.Template bridge = EndCityGenerator.generateAndAdd(
+                     pieces, base, towerBridge.getSecond(), "bridge_end", rotation.getRotated(towerBridge.getFirst()), true
+                  );
+                  EndCityGenerator.generateRecursively(EndCityGenerator.TOWER_BRIDGE_GENERATOR, depth + 1, bridge, null, pieces, rand);
+               }
+            }
+         }
+
+         EndCityGenerator.generateAndAdd(pieces, base, new BPos(-2, 8, -2), "fat_tower_top", rotation, true);
+         return true;
+      }
+   };
+   private static final EndCityGenerator.Generator HOUSE_TOWER_GENERATOR = new EndCityGenerator.Generator() {
+      @Override
+      public void init() {
+      }
+
+      @Override
+      public boolean generate(int depth, EndCityGenerator.Template current, BPos pos, List<EndCityGenerator.Template> pieces, ChunkRand rand) {
+         if (depth <= 8) {
+            BlockRotation rotation = current.getRotation();
+            EndCityGenerator.Template base = EndCityGenerator.generateAndAdd(pieces, current, pos, "base_floor", rotation, true);
+            int size = rand.nextInt(3);
+            if (size == 0) {
+               EndCityGenerator.Template secondFloor = EndCityGenerator.generateAndAdd(pieces, base, new BPos(-1, 4, -1), "base_roof", rotation, true);
+            } else if (size == 1) {
+               EndCityGenerator.Template secondFloor = EndCityGenerator.generateAndAdd(pieces, base, new BPos(-1, 0, -1), "second_floor_2", rotation, false);
+               EndCityGenerator.Template secondRoof = EndCityGenerator.generateAndAdd(pieces, secondFloor, new BPos(-1, 8, -1), "second_roof", rotation, false);
+               EndCityGenerator.generateRecursively(EndCityGenerator.TOWER_GENERATOR, depth + 1, secondRoof, null, pieces, rand);
+            } else {
+               EndCityGenerator.Template secondFloor = EndCityGenerator.generateAndAdd(pieces, base, new BPos(-1, 0, -1), "second_floor_2", rotation, false);
+               EndCityGenerator.Template thirdFloor = EndCityGenerator.generateAndAdd(
+                  pieces, secondFloor, new BPos(-1, 4, -1), "third_floor_2", rotation, false
+               );
+               EndCityGenerator.Template thirdRoof = EndCityGenerator.generateAndAdd(pieces, thirdFloor, new BPos(-1, 8, -1), "third_roof", rotation, true);
+               EndCityGenerator.generateRecursively(EndCityGenerator.TOWER_GENERATOR, depth + 1, thirdRoof, null, pieces, rand);
+            }
+
+            return true;
+         } else {
+            return false;
+         }
+      }
+   };
+   private static final EndCityGenerator.Generator TOWER_BRIDGE_GENERATOR = new EndCityGenerator.Generator() {
+      public boolean shipCreated;
+
+      @Override
+      public void init() {
+         this.shipCreated = false;
+      }
+
+      @Override
+      public boolean generate(int depth, EndCityGenerator.Template current, BPos pos, List<EndCityGenerator.Template> pieces, ChunkRand rand) {
+         BlockRotation rotation = current.getRotation();
+         int size = rand.nextInt(4) + 1;
+         EndCityGenerator.Template base = EndCityGenerator.generateAndAdd(pieces, current, new BPos(0, 0, -4), "bridge_piece", rotation, true);
+         base.setGenDepth(-1);
+         int y = 0;
+
+         for (int floor = 0; floor < size; floor++) {
+            if (rand.nextBoolean()) {
+               base = EndCityGenerator.generateAndAdd(pieces, base, new BPos(0, y, -4), "bridge_piece", rotation, true);
+               y = 0;
+            } else {
+               if (rand.nextBoolean()) {
+                  base = EndCityGenerator.generateAndAdd(pieces, base, new BPos(0, y, -4), "bridge_steep_stairs", rotation, true);
+               } else {
+                  base = EndCityGenerator.generateAndAdd(pieces, base, new BPos(0, y, -8), "bridge_gentle_stairs", rotation, true);
+               }
+
+               y = 4;
+            }
+         }
+
+         if (!this.shipCreated && rand.nextInt(10 - depth) == 0) {
+            EndCityGenerator.generateAndAdd(pieces, base, new BPos(-8 + rand.nextInt(8), y, -70 + rand.nextInt(10)), "ship", rotation, true);
+            this.shipCreated = true;
+         } else if (!EndCityGenerator.generateRecursively(EndCityGenerator.HOUSE_TOWER_GENERATOR, depth + 1, base, new BPos(-3, y + 1, -11), pieces, rand)) {
+            return false;
+         }
+
+         base = EndCityGenerator.generateAndAdd(pieces, base, new BPos(4, y, 0), "bridge_end", rotation.getRotated(BlockRotation.CLOCKWISE_180), true);
+         base.setGenDepth(-1);
+         return true;
+      }
+   };
+   private static final List<Pair<BlockRotation, BPos>> TOWER_BRIDGES = Arrays.asList(
+      new Pair<>(BlockRotation.NONE, new BPos(1, -1, 0)),
+      new Pair<>(BlockRotation.CLOCKWISE_90, new BPos(6, -1, 1)),
+      new Pair<>(BlockRotation.COUNTERCLOCKWISE_90, new BPos(0, -1, 5)),
+      new Pair<>(BlockRotation.CLOCKWISE_180, new BPos(5, -1, 6))
+   );
+   private static final EndCityGenerator.Generator TOWER_GENERATOR = new EndCityGenerator.Generator() {
+      @Override
+      public void init() {
+      }
+
+      @Override
+      public boolean generate(int depth, EndCityGenerator.Template current, BPos pos, List<EndCityGenerator.Template> pieces, ChunkRand rand) {
+         BlockRotation rotation = current.getRotation();
+         EndCityGenerator.Template base = EndCityGenerator.generateAndAdd(
+            pieces, current, new BPos(3 + rand.nextInt(2), -3, 3 + rand.nextInt(2)), "tower_base", rotation, true
+         );
+         base = EndCityGenerator.generateAndAdd(pieces, base, new BPos(0, 7, 0), "tower_piece", rotation, true);
+         EndCityGenerator.Template currentFloor = rand.nextInt(3) == 0 ? base : null;
+         int size = rand.nextInt(3) + 1;
+
+         for (int floor = 0; floor < size; floor++) {
+            base = EndCityGenerator.generateAndAdd(pieces, base, new BPos(0, 4, 0), "tower_piece", rotation, true);
+            if (floor < size - 1 && rand.nextBoolean()) {
+               currentFloor = base;
+            }
+         }
+
+         if (currentFloor != null) {
+            for (Pair<BlockRotation, BPos> towerBridge : EndCityGenerator.TOWER_BRIDGES) {
+               if (rand.nextBoolean()) {
+                  EndCityGenerator.Template bridge = EndCityGenerator.generateAndAdd(
+                     pieces, base, towerBridge.getSecond(), "bridge_end", rotation.getRotated(towerBridge.getFirst()), true
+                  );
+                  EndCityGenerator.generateRecursively(EndCityGenerator.TOWER_BRIDGE_GENERATOR, depth + 1, bridge, null, pieces, rand);
+               }
+            }
+         } else if (depth != 7) {
+            return EndCityGenerator.generateRecursively(EndCityGenerator.FAT_TOWER_GENERATOR, depth + 1, base, null, pieces, rand);
+         }
+
+         EndCityGenerator.generateAndAdd(pieces, base, new BPos(-1, 4, -1), "tower_top", rotation, true);
+         return true;
+      }
+   };
+   private static final String[] TYPES = new String[]{
+      "base_floor",
+      "base_roof",
+      "bridge_end",
+      "bridge_gentle_stairs",
+      "bridge_piece",
+      "bridge_steep_stairs",
+      "fat_tower_base",
+      "fat_tower_middle",
+      "fat_tower_top",
+      "second_floor_1",
+      "second_floor_2",
+      "second_roof",
+      "ship",
+      "third_floor_1",
+      "third_floor_2",
+      "third_roof",
+      "tower_base",
+      "tower_floor",
+      "tower_piece",
+      "tower_top"
+   };
+   private static final HashMap<String, LinkedHashMap<EndCityGenerator.LootType, List<BPos>>> STRUCTURE_TO_LOOT = new HashMap<>();
+   private static final HashMap<String, BPos> STRUCTURE_SIZE = new HashMap<>();
+
+   public EndCityGenerator(MCVersion version) {
+      super(version);
+   }
+
+   public void reset() {
+      TOWER_BRIDGE_GENERATOR.init();
+      this.globalPieces.clear();
+   }
+
+   public List<EndCityGenerator.Template> getGlobalPieces() {
+      return this.globalPieces;
+   }
+
+   @Override
+   public boolean generate(TerrainGenerator generator, int chunkX, int chunkZ, ChunkRand rand) {
+      if (generator == null) {
+         return false;
+      } else {
+         rand.setCarverSeed(generator.getWorldSeed(), chunkX, chunkZ, this.getVersion());
+         int y = EndCity.getAverageYPosition(generator, chunkX, chunkZ);
+         if (y < 60) {
+            return false;
+         } else {
+            BlockRotation rotation = BlockRotation.getRandom(rand);
+            BPos start = new BPos(chunkX * 16 + 8, y, chunkZ * 16 + 8);
+            this.start(start, rotation, this.globalPieces, rand);
+            return true;
+         }
+      }
+   }
+
+   @Override
+   public List<Pair<com.seedfinding.mcfeature.structure.generator.Generator.ILootType, BPos>> getLootPos() {
+      return this.getChestsPos();
+   }
+
+   @Override
+   public List<Pair<com.seedfinding.mcfeature.structure.generator.Generator.ILootType, BPos>> getChestsPos() {
+      List<Pair<com.seedfinding.mcfeature.structure.generator.Generator.ILootType, BPos>> res = new ArrayList<>();
+
+      for (EndCityGenerator.Template template : this.globalPieces) {
+         LinkedHashMap<EndCityGenerator.LootType, List<BPos>> loot = STRUCTURE_TO_LOOT.get(template.getName());
+         if (loot == null) {
+            System.err.println("Missing loot for " + template.getName());
+         } else {
+            for (Entry<EndCityGenerator.LootType, List<BPos>> entry : loot.entrySet()) {
+               EndCityGenerator.LootType lootType = entry.getKey();
+
+               for (BPos offset : entry.getValue()) {
+                  BPos lootPos = template.box.getRotated(template.getRotation()).getInside(offset, template.getRotation());
+                  res.add(new Pair<>(lootType, lootPos));
+               }
+            }
+         }
+      }
+
+      return res;
+   }
+
+   public boolean hasShip() {
+      return this.globalPieces.stream().anyMatch(e -> e.getName().equals("ship"));
+   }
+
+   private static EndCityGenerator.Template calculateTemplate(
+      EndCityGenerator.Template previous, BPos pos, String name, BlockRotation rotation, boolean overwrite
+   ) {
+      EndCityGenerator.Template template = new EndCityGenerator.Template(name, previous.pos, rotation, overwrite);
+      BPos transform1 = pos.transform(BlockMirror.NONE, previous.getRotation(), BPos.ORIGIN);
+      BPos transform2 = BPos.ORIGIN.transform(BlockMirror.NONE, template.getRotation(), BPos.ORIGIN);
+      BPos transform = transform1.subtract(transform2);
+      template.move(transform);
+      return template;
+   }
+
+   private static EndCityGenerator.Template generateAndAdd(
+      List<EndCityGenerator.Template> pieces, EndCityGenerator.Template previous, BPos pos, String name, BlockRotation rotation, boolean overwrite
+   ) {
+      EndCityGenerator.Template template = calculateTemplate(previous, pos, name, rotation, overwrite);
+      pieces.add(template);
+      return template;
+   }
+
+   public boolean start(BPos start, BlockRotation rotation, List<EndCityGenerator.Template> pieces, ChunkRand rand) {
+      TOWER_BRIDGE_GENERATOR.init();
+      EndCityGenerator.Template base = new EndCityGenerator.Template("base_floor", start, rotation, true);
+      pieces.add(base);
+      base = generateAndAdd(pieces, base, new BPos(-1, 0, -1), "second_floor_1", rotation, false);
+      base = generateAndAdd(pieces, base, new BPos(-1, 4, -1), "third_floor_1", rotation, false);
+      base = generateAndAdd(pieces, base, new BPos(-1, 8, -1), "third_roof", rotation, true);
+      return generateRecursively(TOWER_GENERATOR, 1, base, null, pieces, rand);
+   }
+
+   private static boolean generateRecursively(
+      EndCityGenerator.Generator generator, int depth, EndCityGenerator.Template template, BPos pos, List<EndCityGenerator.Template> pieces, ChunkRand rand
+   ) {
+      if (depth <= 8) {
+         List<EndCityGenerator.Template> localPieces = new ArrayList<>();
+         if (generator.generate(depth, template, pos, localPieces, rand)) {
+            boolean isBlocking = false;
+            int genDepth = rand.nextInt();
+
+            for (EndCityGenerator.Template piece : localPieces) {
+               piece.setGenDepth(genDepth);
+               EndCityGenerator.Template collisions = piece.findCollisionPiece(pieces);
+               if (collisions != null && collisions.genDepth != template.genDepth) {
+                  isBlocking = true;
+                  break;
+               }
+            }
+
+            if (!isBlocking) {
+               pieces.addAll(localPieces);
+               return true;
+            }
+         }
+      }
+
+      return false;
+   }
+
+   @Override
+   public com.seedfinding.mcfeature.structure.generator.Generator.ILootType[] getLootTypes() {
+      return EndCityGenerator.LootType.values();
+   }
+
+   static {
+      STRUCTURE_TO_LOOT.put("base_floor", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {
+         {
+            this.computeIfAbsent(EndCityGenerator.LootType.BASE_FLOOR_SENTRY_1, k -> new ArrayList<>()).add(new BPos(3, 2, 9));
+            this.computeIfAbsent(EndCityGenerator.LootType.BASE_FLOOR_SENTRY_2, k -> new ArrayList<>()).add(new BPos(6, 2, 9));
+         }
+      });
+      STRUCTURE_SIZE.put("base_floor", new BPos(10, 4, 10));
+      STRUCTURE_TO_LOOT.put("base_roof", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("base_roof", new BPos(12, 2, 12));
+      STRUCTURE_TO_LOOT.put("bridge_end", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("bridge_end", new BPos(5, 6, 2));
+      STRUCTURE_TO_LOOT.put("bridge_gentle_stairs", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("bridge_gentle_stairs", new BPos(5, 7, 8));
+      STRUCTURE_TO_LOOT.put("bridge_piece", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("bridge_piece", new BPos(5, 6, 4));
+      STRUCTURE_TO_LOOT.put("bridge_steep_stairs", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("bridge_steep_stairs", new BPos(5, 7, 4));
+      STRUCTURE_TO_LOOT.put("fat_tower_base", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("fat_tower_base", new BPos(13, 4, 13));
+      STRUCTURE_TO_LOOT.put("fat_tower_middle", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {
+         {
+            this.computeIfAbsent(EndCityGenerator.LootType.FAT_TOWER_MIDDLE_SENTRY_1, k -> new ArrayList<>()).add(new BPos(2, 2, 6));
+            this.computeIfAbsent(EndCityGenerator.LootType.FAT_TOWER_MIDDLE_SENTRY_2, k -> new ArrayList<>()).add(new BPos(10, 2, 6));
+            this.computeIfAbsent(EndCityGenerator.LootType.FAT_TOWER_MIDDLE_SENTRY_3, k -> new ArrayList<>()).add(new BPos(6, 6, 2));
+            this.computeIfAbsent(EndCityGenerator.LootType.FAT_TOWER_MIDDLE_SENTRY_4, k -> new ArrayList<>()).add(new BPos(6, 6, 10));
+         }
+      });
+      STRUCTURE_SIZE.put("fat_tower_middle", new BPos(13, 8, 13));
+      STRUCTURE_TO_LOOT.put("fat_tower_top", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {
+         {
+            this.computeIfAbsent(EndCityGenerator.LootType.FAT_TOWER_TOP_CHEST_1, k -> new ArrayList<>()).add(new BPos(3, 2, 11));
+            this.computeIfAbsent(EndCityGenerator.LootType.FAT_TOWER_TOP_CHEST_2, k -> new ArrayList<>()).add(new BPos(5, 2, 13));
+         }
+      });
+      STRUCTURE_SIZE.put("fat_tower_top", new BPos(17, 6, 17));
+      STRUCTURE_TO_LOOT.put("second_floor_1", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("second_floor_1", new BPos(12, 8, 12));
+      STRUCTURE_TO_LOOT.put("second_floor_2", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {
+         {
+            this.computeIfAbsent(EndCityGenerator.LootType.SECOND_FLOOR_SENTRY, k -> new ArrayList<>()).add(new BPos(8, 5, 6));
+         }
+      });
+      STRUCTURE_SIZE.put("second_floor_2", new BPos(12, 8, 12));
+      STRUCTURE_TO_LOOT.put("second_roof", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("second_roof", new BPos(14, 2, 14));
+      STRUCTURE_TO_LOOT.put("ship", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {
+         {
+            this.computeIfAbsent(EndCityGenerator.LootType.SHIP_SENTRY_1, k -> new ArrayList<>()).add(new BPos(6, 4, 8));
+            this.computeIfAbsent(EndCityGenerator.LootType.SHIP_SENTRY_2, k -> new ArrayList<>()).add(new BPos(8, 6, 27));
+            this.computeIfAbsent(EndCityGenerator.LootType.SHIP_SENTRY_3, k -> new ArrayList<>()).add(new BPos(4, 11, 27));
+            this.computeIfAbsent(EndCityGenerator.LootType.SHIP_CHEST_1, k -> new ArrayList<>()).add(new BPos(5, 5, 7));
+            this.computeIfAbsent(EndCityGenerator.LootType.SHIP_CHEST_2, k -> new ArrayList<>()).add(new BPos(7, 5, 7));
+            this.computeIfAbsent(EndCityGenerator.LootType.SHIP_ELYTRA, k -> new ArrayList<>()).add(new BPos(6, 5, 7));
+         }
+      });
+      STRUCTURE_SIZE.put("ship", new BPos(13, 24, 29));
+      STRUCTURE_TO_LOOT.put("third_floor_1", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("third_floor_1", new BPos(14, 8, 14));
+      STRUCTURE_TO_LOOT.put("third_floor_2", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {
+         {
+            this.computeIfAbsent(EndCityGenerator.LootType.THIRD_FLOOR_SENTRY_1, k -> new ArrayList<>()).add(new BPos(2, 5, 2));
+            this.computeIfAbsent(EndCityGenerator.LootType.THIRD_FLOOR_SENTRY_2, k -> new ArrayList<>()).add(new BPos(11, 5, 2));
+            this.computeIfAbsent(EndCityGenerator.LootType.THIRD_FLOOR_CHEST, k -> new ArrayList<>()).add(new BPos(6, 6, 2));
+         }
+      });
+      STRUCTURE_SIZE.put("third_floor_2", new BPos(14, 8, 14));
+      STRUCTURE_TO_LOOT.put("third_roof", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("third_roof", new BPos(16, 2, 16));
+      STRUCTURE_TO_LOOT.put("tower_base", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("tower_base", new BPos(7, 7, 7));
+      STRUCTURE_TO_LOOT.put("tower_floor", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("tower_floor", new BPos(7, 4, 7));
+      STRUCTURE_TO_LOOT.put("tower_piece", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {});
+      STRUCTURE_SIZE.put("tower_piece", new BPos(7, 4, 7));
+      STRUCTURE_TO_LOOT.put("tower_top", new LinkedHashMap<EndCityGenerator.LootType, List<BPos>>() {
+         {
+            this.computeIfAbsent(EndCityGenerator.LootType.TOWER_TOP_SENTRY, k -> new ArrayList<>()).add(new BPos(4, 3, 4));
+         }
+      });
+      STRUCTURE_SIZE.put("tower_top", new BPos(9, 5, 9));
+   }
+
+   interface Generator {
+      void init();
+
+      boolean generate(int var1, EndCityGenerator.Template var2, BPos var3, List<EndCityGenerator.Template> var4, ChunkRand var5);
+   }
+
+   public static enum LootType implements com.seedfinding.mcfeature.structure.generator.Generator.ILootType {
+      BASE_FLOOR_SENTRY_1(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      BASE_FLOOR_SENTRY_2(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      FAT_TOWER_MIDDLE_SENTRY_1(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      FAT_TOWER_MIDDLE_SENTRY_2(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      FAT_TOWER_MIDDLE_SENTRY_3(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      FAT_TOWER_MIDDLE_SENTRY_4(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      SECOND_FLOOR_SENTRY(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      SHIP_SENTRY_1(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      SHIP_SENTRY_2(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      SHIP_SENTRY_3(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      THIRD_FLOOR_SENTRY_1(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      THIRD_FLOOR_SENTRY_2(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      TOWER_TOP_SENTRY(null, Items.SHULKER_SHELL, ChestContent.ChestType.UNKNOWN),
+      FAT_TOWER_TOP_CHEST_1(MCLootTables.END_CITY_TREASURE_CHEST, Items.CHEST, ChestContent.ChestType.SINGLE_CHEST),
+      FAT_TOWER_TOP_CHEST_2(MCLootTables.END_CITY_TREASURE_CHEST, Items.CHEST, ChestContent.ChestType.SINGLE_CHEST),
+      THIRD_FLOOR_CHEST(MCLootTables.END_CITY_TREASURE_CHEST, Items.CHEST, ChestContent.ChestType.SINGLE_CHEST),
+      SHIP_CHEST_1(MCLootTables.END_CITY_TREASURE_CHEST, Items.CHEST, ChestContent.ChestType.SINGLE_CHEST),
+      SHIP_CHEST_2(MCLootTables.END_CITY_TREASURE_CHEST, Items.CHEST, ChestContent.ChestType.SINGLE_CHEST),
+      SHIP_ELYTRA(null, Items.ELYTRA, ChestContent.ChestType.UNKNOWN);
+
+      public final Supplier<LootTable> lootTable;
+      public final Item item;
+      public final ChestContent.ChestType chestType;
+
+      private LootType(Supplier<LootTable> lootTable, Item item, ChestContent.ChestType chestType) {
+         this.lootTable = lootTable;
+         this.item = item;
+         this.chestType = chestType;
+      }
+
+      @Override
+      public LootTable getLootTableUncached(MCVersion version) {
+         return this.lootTable == null ? null : this.lootTable.get().apply(version);
+      }
+
+      @Override
+      public ChestContent.ChestType getChestType() {
+         return this.chestType;
+      }
+   }
+
+   static class Template {
+      private final String name;
+      private BPos pos;
+      private final BlockRotation rotation;
+      private final boolean overwrite;
+      private int genDepth = 0;
+      private BlockBox box;
+
+      public Template(String name, BPos pos, BlockRotation rotation, boolean overwrite) {
+         this.name = name;
+         this.pos = pos;
+         this.rotation = rotation;
+         this.overwrite = overwrite;
+         this.box = BlockBox.getBoundingBox(pos, rotation, BPos.ORIGIN, BlockMirror.NONE, Objects.requireNonNull(EndCityGenerator.STRUCTURE_SIZE.get(name)));
+      }
+
+      public void setGenDepth(int genDepth) {
+         this.genDepth = genDepth;
+      }
+
+      public int getGenDepth() {
+         return this.genDepth;
+      }
+
+      public EndCityGenerator.Template findCollisionPiece(List<EndCityGenerator.Template> templates) {
+         for (EndCityGenerator.Template template : templates) {
+            if (template.getBox().intersects(this.box)) {
+               return template;
+            }
+         }
+
+         return null;
+      }
+
+      public void move(BPos by) {
+         this.pos = this.pos.add(by);
+         this.box.move(by.getX(), by.getY(), by.getZ());
+      }
+
+      public BlockBox getBox() {
+         return this.box;
+      }
+
+      public void setBox(BlockBox box) {
+         this.box = box;
+      }
+
+      public void setPos(BPos pos) {
+         this.pos = pos;
+      }
+
+      public String getName() {
+         return this.name;
+      }
+
+      public BlockRotation getRotation() {
+         return this.rotation;
+      }
+
+      public BPos getPos() {
+         return this.pos;
+      }
+
+      public boolean isOverwrite() {
+         return this.overwrite;
+      }
+   }
+}

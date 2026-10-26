@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "package": "com.stash.hunt.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "LivingEntityMixin",
+    "EntityMixin",
+    "KeyBindingMixin",
+    "XaeroDrawingMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

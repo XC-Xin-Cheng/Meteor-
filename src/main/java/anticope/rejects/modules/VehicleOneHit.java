@@ -1,0 +1,46 @@
+package anticope.rejects.modules;
+
+import anticope.rejects.MeteorRejectsAddon;
+import meteordevelopment.meteorclient.events.packets.PacketEvent.Send;
+import meteordevelopment.meteorclient.settings.Setting;
+import meteordevelopment.meteorclient.settings.SettingGroup;
+import meteordevelopment.meteorclient.settings.IntSetting.Builder;
+import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.orbit.EventHandler;
+import net.minecraft.network.protocol.game.ServerboundInteractPacket;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
+import net.minecraft.world.phys.EntityHitResult;
+
+public class VehicleOneHit extends Module {
+   private final SettingGroup sgGeneral = this.settings.getDefaultGroup();
+   private final Setting<Integer> amount = this.sgGeneral
+      .add(
+         ((Builder)((Builder)((Builder)new Builder().name("amount")).description("The number of packets to send.")).defaultValue(16))
+            .range(1, 100)
+            .sliderRange(1, 20)
+            .build()
+      );
+   private boolean sending = false;
+
+   public VehicleOneHit() {
+      super(MeteorRejectsAddon.CATEGORY, "vehicle-one-hit", "Destroy vehicles with one hit.");
+   }
+
+   @EventHandler
+   private void onPacketSend(Send event) {
+      if (!this.sending) {
+         if (event.packet instanceof ServerboundInteractPacket
+            && this.mc.hitResult instanceof EntityHitResult ehr
+            && (ehr.getEntity() instanceof AbstractMinecart || ehr.getEntity() instanceof AbstractBoat)) {
+            this.sending = true;
+
+            for (int i = 0; i < this.amount.get() - 1; i++) {
+               this.mc.player.connection.getConnection().send(event.packet, null);
+            }
+
+            this.sending = false;
+         }
+      }
+   }
+}
