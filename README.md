@@ -14,24 +14,24 @@ Nerv Printer、Hyperglide 与 Meteor-I18n-XC 简体中文汉化合为一个 Mete
 
 ## 下载
 
-**按版本分支下载**:每个支持的 Minecraft 版本一个分支,对应 jar 在分支的 `jar/` 目录内。
-前置(Meteor Client、Baritone、Fabric API、Xaero 系列等)**不随仓库分发**,请自行安装
-匹配版本;与 Meteor Client 一同放进 `.minecraft/mods`(先删除旧的各子 addon jar 与独立的
-Meteor-I18n-XC,避免类重复)。
+**按版本分支**:每个支持的 Minecraft 版本一个分支,分支内为**该版本的构建源码**
+(整合核心 + Meteor-I18n-XC,Gradle 构建树)。构建产物 jar 不随仓库分发;前置
+(Meteor Client、Baritone、Fabric API、Xaero 系列等)也**不随仓库分发**,请自行安装匹配版本。
+构建:分支根目录 `gradlew build`(依赖本地 Meteor Maven 缓存,见 gradle.build 内仓库配置)。
 
 | 分支 | jar(在 `jar/` 目录内) | 适用 Minecraft |
 |---|---|---|
-| [1.21.1](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.1) | `Meteor-Addon+++-1.21.1-1.5.8.jar` | 1.21.1 |
-| [1.21.4](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.4) | `Meteor-Addon+++-1.21.4-1.5.8.jar` | 1.21.4 |
-| [1.21.5](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.5) | `Meteor-Addon+++-1.21.5-1.5.8.jar` | 1.21.5 |
-| [1.21.6](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.6) | `Meteor-Addon+++-1.21.6-1.5.8.jar` | 1.21.6 |
-| [1.21.7](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.7) | `Meteor-Addon+++-1.21.7-1.5.8.jar` | 1.21.7 |
-| [1.21.8](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.8) | `Meteor-Addon+++-1.21.8-1.5.8.jar` | 1.21.8 |
-| [1.21.10](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.10) | `Meteor-Addon+++-1.21.10-1.5.8.jar` | 1.21.10 |
-| [1.21.11](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.11) | `Meteor-Addon+++-1.21.11-1.5.8.jar` | 1.21.11 |
-| [26.1](https://github.com/XC-Xin-Cheng/Meteor-/tree/26.1) | `Meteor-Addon+++-26.1-1.5.8.jar` | 26.1 – 26.1.2 |
-| [26.2](https://github.com/XC-Xin-Cheng/Meteor-/tree/26.2) | `Meteor-Addon+++-26.2-1.5.8.jar` | 26.2 |
-| [26.3](https://github.com/XC-Xin-Cheng/Meteor-/tree/26.3) | `Meteor-Addon+++-26.3-1.5.8.jar` | 26.3 |
+| [1.21.1](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.1) | 1.21.1 |
+| [1.21.4](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.4) | 1.21.4 |
+| [1.21.5](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.5) | 1.21.5 |
+| [1.21.6](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.6) | 1.21.6 |
+| [1.21.7](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.7) | 1.21.7 |
+| [1.21.8](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.8) | 1.21.8 |
+| [1.21.10](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.10) | 1.21.10 |
+| [1.21.11](https://github.com/XC-Xin-Cheng/Meteor-/tree/1.21.11) | 1.21.11 |
+| [26.1](https://github.com/XC-Xin-Cheng/Meteor-/tree/26.1) | 26.1 – 26.1.2 |
+| [26.2](https://github.com/XC-Xin-Cheng/Meteor-/tree/26.2) | 26.2 |
+| [26.3](https://github.com/XC-Xin-Cheng/Meteor-/tree/26.3) | 26.3 |
 
 通用要求:Fabric Loader ≥ 0.19.2(1.21.x 建议 ≥ 0.16.9,26.2+ ≥ 0.19.3)、Java 21(1.21.x)
 或 Java 25(26.x)、与游戏版本匹配的 Meteor Client;**建议同时安装匹配版本的 Baritone**
