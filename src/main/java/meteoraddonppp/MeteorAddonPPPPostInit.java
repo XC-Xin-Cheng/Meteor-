@@ -1,6 +1,7 @@
 package meteoraddonppp;
 
 import cn.blockforge.meteorzhcn.modules.Translation;
+
 import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.events.world.TickEvent.Post;
 import meteordevelopment.meteorclient.systems.config.Config;
@@ -11,72 +12,72 @@ import meteordevelopment.orbit.EventHandler;
 import net.minecraft.network.chat.Component;
 
 public final class MeteorAddonPPPPostInit {
-   private static final String READY_KEY = "key.meteor-client.open-gui";
-   private static final String SAMPLE_KEY = "meteor.jefff's_mods.meteor+++.auto_portal.name";
-   private static boolean applied;
+    private static final String READY_KEY = "key.meteor-client.open-gui";
+    private static boolean applied;
 
-   private MeteorAddonPPPPostInit() {
-   }
+    private MeteorAddonPPPPostInit() {
+    }
 
-   @PostInit
-   public static void init() {
-      if (!applied) {
-         applied = true;
+    @PostInit
+    public static void init() {
+        if (applied) return;
+        applied = true;
 
-         try {
-            Config var0 = Config.get();
-            if (var0 != null) {
-               var0.customFont.set(false);
-               MeteorClient.LOG.info("[{}] Custom font disabled (custom-font={}).", "Meteor Addon+++", var0.customFont.get());
+        try {
+            Config config = Config.get();
+            if (config != null) {
+                config.customFont.set(false);
+                MeteorClient.LOG.info("[{}] Custom font disabled (custom-font={}).", MeteorAddonPPP.DISPLAY_NAME, config.customFont.get());
             }
-         } catch (Throwable var1) {
-            MeteorClient.LOG.warn("[{}] Could not disable the custom font.", "Meteor Addon+++", var1);
-         }
+        } catch (Throwable throwable) {
+            MeteorClient.LOG.warn("[{}] Could not disable the custom font.", MeteorAddonPPP.DISPLAY_NAME, throwable);
+        }
 
-         MeteorClient.EVENT_BUS.subscribe(new MeteorAddonPPPPostInit.TranslationEnabler());
-      }
-   }
+        // 应用保存的组件显示开关
+        ComponentVisibility.apply();
 
-   private static final class TranslationEnabler {
-      private int ticks;
+        MeteorClient.EVENT_BUS.subscribe(new TranslationEnabler());
+    }
 
-      @EventHandler
-      private void onTick(Post var1) {
-         this.ticks++;
-         String var2 = Component.translatable("key.meteor-client.open-gui").getString();
-         if ("key.meteor-client.open-gui".equals(var2)) {
-            if (this.ticks > 3600) {
-               MeteorClient.LOG.warn("[{}] Language table did not load, giving up on the Chinese defaults.", "Meteor Addon+++");
-               MeteorClient.EVENT_BUS.unsubscribe(this);
+    private static final class TranslationEnabler {
+        private int ticks;
+
+        @EventHandler
+        private void onTick(Post event) {
+            ticks++;
+            String sample = Component.translatable(READY_KEY).getString();
+            if (READY_KEY.equals(sample)) {
+                if (ticks > 3600) {
+                    MeteorClient.LOG.warn("[{}] Language table did not load, giving up on the Chinese defaults.", MeteorAddonPPP.DISPLAY_NAME);
+                    MeteorClient.EVENT_BUS.unsubscribe(this);
+                }
+                return;
             }
-         } else {
+
             MeteorClient.EVENT_BUS.unsubscribe(this);
 
             try {
-               Translation var3 = (Translation)Modules.get().get(Translation.class);
-               if (var3 != null) {
-                  var3.bSetAutoTranslation.set(true);
-                  if (!var3.isActive()) {
-                     var3.enable();
-                  }
+                Translation translation = (Translation) Modules.get().get(Translation.class);
+                if (translation != null) {
+                    translation.bSetAutoTranslation.set(true);
+                    if (!translation.isActive()) {
+                        Compat.enableModule(translation);
+                    }
+                    translation.tran();
 
-                  var3.tran();
-                  String var4 = Component.translatable("key.meteor-client.open-gui").getString();
-                  Module var5 = Modules.get().get("aim-assist");
-                  if (var5 == null) {
-                     var5 = Modules.get().get("auto-portal");
-                  }
+                    String recheck = Component.translatable(READY_KEY).getString();
+                    Module sampleModule = Modules.get().get("aim-assist");
+                    if (sampleModule == null) sampleModule = Modules.get().get("auto-portal");
 
-                  MeteorClient.LOG
-                     .info(
+                    MeteorClient.LOG.info(
                         "[{}] Chinese translation enabled (active={}, language-ready={}, sample-title={}).",
-                        new Object[]{"Meteor Addon+++", var3.isActive(), !"key.meteor-client.open-gui".equals(var4), var5 != null ? var5.title : "n/a"}
-                     );
-               }
-            } catch (Throwable var6) {
-               MeteorClient.LOG.warn("[{}] Could not enable the Chinese translation.", "Meteor Addon+++", var6);
+                        MeteorAddonPPP.DISPLAY_NAME, translation.isActive(), !READY_KEY.equals(recheck),
+                        sampleModule != null ? sampleModule.title : "n/a"
+                    );
+                }
+            } catch (Throwable throwable) {
+                MeteorClient.LOG.warn("[{}] Could not enable the Chinese translation.", MeteorAddonPPP.DISPLAY_NAME, throwable);
             }
-         }
-      }
-   }
+        }
+    }
 }

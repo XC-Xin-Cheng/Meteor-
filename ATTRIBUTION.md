@@ -60,3 +60,23 @@ Meteor Addon+++ 是把多个开源 Meteor Client addon 的构建产物合并为�
 - 自动打开「汉化」模块里的「自动翻译」。
 
 这三项由 `MeteorAddonPPPPostInit` 在游戏加载完语言表后应用（会覆盖配置里的开关）。
+
+## 1.5.8 新增收录
+
+| 组件 | 原作者 | 版本基线 | 许可 |
+| --- | --- | --- | --- |
+| Asteroide | asteroide-development | 0.2.3 | Apache-2.0 |
+| Nora Tweaks | noramibu | build-7/8/11 | CC0-1.0 |
+| Stardust | 0xTas | 1.7.0 / 1.14.0 | GPL-3.0 |
+| Nerv Printer | Julflips | 1.21.8 / 1.21.11 | GPL-3.0 |
+| Hyperglide | Ark223 | 2026.10.20 | GPL-3.0 |
+
+- https://github.com/asteroide-development/Asteroide
+- https://github.com/noramibu/Nora-Tweaks
+- https://github.com/0xTas/stardust
+- https://github.com/Julflips/nerv-printer-addon
+- https://github.com/Ark223/Hyperglide
+
+各版本收录数量以上方分支表对应的 jar 为准(上游未出构建的版本做部分收录)。
+catppuccin 主题 addon 曾在 1.1.0 系列收录,1.5.8 起移除(其 widget mixin 在整合环境下
+导致设置界面异常与主题切换崩溃)。
