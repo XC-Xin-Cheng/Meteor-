@@ -1,0 +1,43 @@
+buildscript {
+    repositories {
+        maven { url = uri('C:/Users/qhad/.zcode/workspace/draft-f18c7d32-b210-4c23-855d-e7b534758dbb/b_1_21_5/libs/m2repo') }
+    }
+}
+
+plugins {
+    id 'fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = 'meteoraddonppp.build'
+
+repositories {
+    maven { url = uri('C:/Users/qhad/.zcode/workspace/draft-f18c7d32-b210-4c23-855d-e7b534758dbb/b_1_21_5/libs/m2repo') }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+    // meteor 1.21.x 走 intermediary，由 loom 重映射后参与编译
+    modImplementation "meteordevelopment:meteor-client:1.21.5-local"
+    implementation "net.fabricmc:fabric-loader:0.19.5"
+    compileOnly files('C:/Users/qhad/.zcode/workspace/draft-f18c7d32-b210-4c23-855d-e7b534758dbb/b_1_21_5/libs/orbit-0.2.4.jar')
+    compileOnly files('C:/Users/qhad/.zcode/workspace/draft-f18c7d32-b210-4c23-855d-e7b534758dbb/b_1_21_5/libs/sponge-mixin-0.17.4+mixin.0.8.7.jar')
+}
+
+processResources {
+    inputs.property "version", project.version
+    filteringCharset = 'UTF-8'
+    filesMatching("fabric.mod.json") {
+        filter { line -> line.replace('${version}', project.version.toString()) }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = 'UTF-8'
+}
+
+java { toolchain.languageVersion = JavaLanguageVersion.of(21) }
+base { archivesName = project.archives_base_name }

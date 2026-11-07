@@ -1,8 +1,9 @@
 {
   "required": true,
   "package": "meteoraddonppp.mixin",
-  "compatibilityLevel": "JAVA_25",
+  "compatibilityLevel": "JAVA_21",
   "client": [
+    "ModuleTitleAccessor",
     "TitleScreenCreditsMixin"
   ],
   "mixins": [
