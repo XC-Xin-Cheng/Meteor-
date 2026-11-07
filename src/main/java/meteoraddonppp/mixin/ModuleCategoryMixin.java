@@ -23,7 +23,7 @@ public abstract class ModuleCategoryMixin {
       at = {@At("RETURN")}
    )
    private void meteoraddonppp$moveToMainCategory(Category var1, String var2, String var3, String[] var4, CallbackInfo var5) {
-      Module var6 = (Module)this;
+      Module var6 = (Module)(Object)this;
       if (MeteorAddonPPP.movesToMainCategory(var6.getClass().getName())) {
          this.category = MeteorAddonPPP.CATEGORY;
       }
