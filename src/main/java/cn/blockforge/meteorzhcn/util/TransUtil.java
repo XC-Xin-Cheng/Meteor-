@@ -2,57 +2,99 @@ package cn.blockforge.meteorzhcn.util;
 
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import meteordevelopment.meteorclient.addons.AddonManager;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import net.minecraft.network.chat.Component;
 
+/**
+ * 汉化用到的字符串工具：键名归一化、读取当前语言下的译文。
+ */
 public final class TransUtil {
-   private TransUtil() {
-   }
+    private TransUtil() {
+    }
 
-   private static String trans(String s) {
-      return Component.translatable(s).getString();
-   }
+    private static String trans(String s) {
+        return Component.translatable(s).getString();
+    }
 
-   public static String trans(String key, String alternative) {
-      String trans = trans(key);
-      return trans.equals(key) ? alternative : trans;
-   }
+    /** 取键对应的译文；当前语言里没有这个键时返回给定的兜底文本。 */
+    public static String trans(String key, String alternative) {
+        String trans = trans(key);
+        return trans.equals(key) ? alternative : trans;
+    }
 
-   public static boolean hasKey(String key) {
-      return !trans(key).equals(key);
-   }
+    /**
+     * 当前语言里是否存在这个键：缺失时原版会把键名原样返回，以此判断。
+     * 自动引擎靠它来决定到底该用哪一套键写法。
+     */
+    public static boolean hasKey(String key) {
+        return !trans(key).equals(key);
+    }
 
-   public static Set<String> getAddonNames() {
-      return AddonManager.ADDONS.stream().map(addon -> addon.name).map(TransUtil::baseFormat).collect(Collectors.toSet());
-   }
+    /** 列出当前已加载的全部 Meteor 附加模组名（归一化之后）。 */
+    public static Set<String> getAddonNames() {
+        return AddonManager.ADDONS.stream().map(addon -> addon.name).map(TransUtil::baseFormat).collect(Collectors.toSet());
+    }
 
-   public static String getAddonName(Module m) {
-      return baseFormat(m.addon == null ? "unknow_addon" : m.addon.name);
-   }
+    public static String getAddonName(Module m) {
+        return baseFormat(m.addon == null ? "unknow_addon" : m.addon.name);
+    }
 
-   public static String baseFormat(String s) {
-      String lower = s.toLowerCase();
-      int length = lower.length();
+    /** 与 Meteor 生成键时使用的规则保持一致：小写，空格/短横线/点/引号一律换成下划线。 */
+    public static String baseFormat(String s) {
+        // 保持 toLowerCase() 的原始语义（它比逐字符 Character.toLowerCase 覆盖得更全），
+        // 但把后面的四次 replace 合成一次遍历：没有需要替换的字符时直接返回，
+        // 有的话也只产生一个中间字符串。汉化时每个模块/设置都要过一遍这里。
+        String lower = s.toLowerCase();
+        int length = lower.length();
 
-      for (int i = 0; i < length; i++) {
-         char c = lower.charAt(i);
-         if (c == ' ' || c == '-' || c == '.' || c == '"') {
-            StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            char c = lower.charAt(i);
+            if (c == ' ' || c == '-' || c == '.' || c == '"') {
+                StringBuilder sb = new StringBuilder(length);
 
-            for (int j = 0; j < length; j++) {
-               char current = lower.charAt(j);
-               sb.append(current != ' ' && current != '-' && current != '.' && current != '"' ? current : '_');
+                for (int j = 0; j < length; j++) {
+                    char current = lower.charAt(j);
+                    sb.append(current == ' ' || current == '-' || current == '.' || current == '"' ? '_' : current);
+                }
+
+                return sb.toString();
             }
+        }
 
-            return sb.toString();
-         }
-      }
+        return lower;
+    }
 
-      return lower;
-   }
+    public static String formatValue(String s) {
+        return s.replace("\"", "\\\"");
+    }
 
-   public static String formatValue(String s) {
-      return s.replace("\"", "\\\"");
-   }
+    /**
+     * 模块标题汉化时保留原英文名首字母（1 个、小写），让汉化后的功能列表
+     * 仍按原英文字母顺序排列。首字母只在模块第一次被汉化时从原始标题取一次；
+     * 重复汉化不会叠加前缀。纯中文/非字母开头的标题不加前缀。
+     */
+    public static String withInitialPrefix(Module module, String translatedTitle) {
+        String original = ORIGINAL_TITLES.computeIfAbsent(module, m -> m.title == null ? "" : m.title);
+        if (original.isEmpty()) return translatedTitle;
+
+        char initial = Character.toLowerCase(original.charAt(0));
+        if (initial < 'a' || initial > 'z') return translatedTitle;
+
+        // 去掉重复汉化时可能残留的旧前缀（单个小写字母后跟非 ASCII 字母）
+        String base = translatedTitle;
+        if (base.length() > 1) {
+            char first = base.charAt(0);
+            char second = base.charAt(1);
+            boolean looksPrefixed = first >= 'a' && first <= 'z'
+                && !(second >= 'a' && second <= 'z') && !(second >= 'A' && second <= 'Z');
+            if (looksPrefixed) base = base.substring(1);
+        }
+
+        return initial + base;
+    }
+
+    private static final java.util.Map<Module, String> ORIGINAL_TITLES =
+        java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 }
