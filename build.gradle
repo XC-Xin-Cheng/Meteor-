@@ -1,0 +1,46 @@
+buildscript {
+    repositories {
+        maven { url = uri('C:/Users/qhad/.zcode/workspace/draft-f18c7d32-b210-4c23-855d-e7b534758dbb/branch-26.2/libs/m2repo') }
+    }
+}
+
+plugins {
+    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = 'meteoraddonppp.build'
+
+repositories {
+    maven { url = uri('C:/Users/qhad/.zcode/workspace/draft-f18c7d32-b210-4c23-855d-e7b534758dbb/branch-26.2/libs/m2repo') }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:0.19.5"
+
+    // 26.x 起游戏不再混淆，Meteor 发行 jar 就是 Mojang 官方名，直接当编译期依赖
+    compileOnly files('C:/Users/qhad/.zcode/workspace/draft-f18c7d32-b210-4c23-855d-e7b534758dbb/branch-26.2/libs/meteor-client-26.2.jar')
+    // orbit 注解（@PostInit/@EventHandler），运行期由 Meteor 提供
+    compileOnly files('C:/Users/qhad/.zcode/workspace/draft-f18c7d32-b210-4c23-855d-e7b534758dbb/branch-26.2/libs/orbit-0.2.4.jar')
+    // mixin/asm：@Mixin 注解与 AP 需要（branch-26.3 里的缓存副本）
+    compileOnly files('C:/Users/qhad/.zcode/workspace/draft-f18c7d32-b210-4c23-855d-e7b534758dbb/branch-26.3/libs/sponge-mixin-0.17.4+mixin.0.8.7.jar')
+    compileOnly files('C:/Users/qhad/.zcode/workspace/draft-f18c7d32-b210-4c23-855d-e7b534758dbb/branch-26.3/libs/asm-commons-9.10.1.jar')
+}
+
+processResources {
+    inputs.property "version", project.version
+    filteringCharset = 'UTF-8'
+    filesMatching("fabric.mod.json") {
+        filter { line -> line.replace('${version}', project.version.toString()) }
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+
+java { toolchain.languageVersion = JavaLanguageVersion.of(25) }
+base { archivesName = project.archives_base_name }
