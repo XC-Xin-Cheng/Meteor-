@@ -3,6 +3,7 @@
   "package": "meteoraddonppp.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "ModuleTitleAccessor",
     "TitleScreenCreditsMixin"
   ],
   "mixins": [
